@@ -691,6 +691,8 @@ Mestimation_process.mestim_gaussian <- function(mestim_list, ...){
   estim <- geex::coef(results)
   sd_estim <- sqrt(diag(geex::vcov(results)))
   
+  mm <- model.matrix(object = delete.response(terms(mestim_list$formula)), data = mestim_list$data) #only to get correct variables names
+  
   base_names <- c(colnames(mm), "tau0", "tau1")
   all_names  <- c(base_names, estimands_names)
   
