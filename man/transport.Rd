@@ -31,8 +31,8 @@ The function employs three distinct estimation strategies:
 The function returns an object of the same class with the same arguments as the input \code{object}, but with updated results for the \code{newdata}.
 }
 \references{
-Pearl J, Bareinboim E. External validity: From do-calculus to transportability across populations. Statistical Science. 2012;29(4):579-595.
-Ross RK, Zivich PN, Stringer JSA, Cole SR. M-estimation for common epidemiological measures: introduction and applied examples. Int J Epidemiol. 2024 Feb 14;53(2):dyae030. doi: 10.1093/ije/dyae030. PMID: 38423105; PMCID: PMC10904145.
+Pearl J, Bareinboim E. External validity: From do-calculus to transportability across populations. Statistical Science. 2012;29(4):579-595.\\
+Ross RK, Zivich PN, Stringer JSA, Cole SR. M-estimation for common epidemiological measures: introduction and applied examples. Int J Epidemiol. 2024 Feb 14;53(2):dyae030. doi: 10.1093/ije/dyae030. PMID: 38423105; PMCID: PMC10904145.\\
 Saul BC, Hudgens MG . The Calculus of M-Estimation in R with geex. Journal of Statistical Software. 2020;92(2), 1–15. doi:10.18637/jss.v092.i02.
 }
 
