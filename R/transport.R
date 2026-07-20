@@ -4,6 +4,8 @@ transport <- function(object, newdata, estim_var = "mc", n.sim=500, seed=NULL) {
   }
   if (!is.null(object$newdata)) {stop("Cannot transport an already transported object")}
   
+  if("initial.data" %in% attributes(object)$names){stop("Cannot transport when multiple imputations has been used, try relaunch gcomputation without it.")}
+  
   if(!(estim_var %in% c("mc", "boot", "m-estim"))){
     stop("estim_ var parameter needs to be one of: mc, boot, m-estim")
   }
@@ -44,7 +46,7 @@ transport <- function(object, newdata, estim_var = "mc", n.sim=500, seed=NULL) {
     stop(paste0("Some variables from the original model are not in newdata: ", paste(missing_vars, collapse=", ")))
   }
   
-
+  
   
   if (any(is.na(newdata))){
     nmiss <- nrow(newdata)
@@ -493,47 +495,47 @@ create_mestim_obj <- function(gc, data_target){
   
   form <- gc$formula
   
-  if("initial.data" %in% attributes(gc)){
+  # if("initial.data" %in% attributes(gc)){
+  #   
+  #   data_form <- gc$initial.data %>%
+  #     select(all.vars(form))
+  #   
+  #   if(any(is.na(data_form))){
+  #     
+  #     initial_data_omit <- na.omit(data_form)
+  #     nmiss_origin <- nrow(data_form) - nrow(initial_data_omit)
+  #     
+  #     data_origin <- initial_data_omit
+  #     
+  #     warning("M-estimation for transportability cannot be used with multiple imputations, rows containing NA values in the original dataset have been removed!")
+  #     
+  #   }else{
+  #     
+  #     nmiss_origin <- 0
+  #     
+  #   }
+  # }else{
+  
+  data_form <- gc$data %>%
+    select(all.vars(form))  
+  
+  if (any(is.na(data_form))){
     
-    data_form <- gc$initial.data %>%
-      select(all.vars(form))
+    initial_data_omit <- na.omit(data_form)
+    nmiss_origin <- nrow(data_form) - nrow(initial_data_omit)
     
-    if(any(is.na(data_form))){
-      
-      initial_data_omit <- na.omit(data_form)
-      nmiss_origin <- nrow(data_form) - nrow(initial_data_omit)
-      
-      data_origin <- initial_data_omit
-      
-      warning("M-estimation for transportability cannot be used with multiple imputations, rows containing NA values in the original dataset have been removed!")
-      
-    }else{
-      
-      nmiss_origin <- 0
-      
-    }
-  }else{
+    data_origin <- initial_data_omit
     
-    data_form <- gc$data %>%
-      select(all.vars(form))  
+    warning("Rows containing NA values in the original dataset have been removed!")
     
-    if (any(is.na(data_form))){
-      
-      initial_data_omit <- na.omit(data_form)
-      nmiss_origin <- nrow(data_form) - nrow(initial_data_omit)
-      
-      data_origin <- initial_data_omit
-      
-      warning("Rows containing NA values in the original dataset have been removed!")
-      
-    } else {
-      
-      nmiss_origin <- 0
-      
-    }
+  } else {
     
+    nmiss_origin <- 0
     
   }
+  
+  
+  # }
   
   grp_var <- gc$group
   family <- gc$qmodel.fit$family$family
@@ -677,10 +679,10 @@ Mestimation_process.mestim_gaussian <- function(mestim_list, ...){
                       formula = mestim_list$formula,
                       group_var = mestim_list$grp_var,
                       family = mestim_list$family),
-    root_control = setup_root_control(start = mestim_list$root_start))
+    root_control = geex::setup_root_control(start = mestim_list$root_start))
   
-  estim <- coef(results)
-  sd_estim <- sqrt(diag(vcov(results)))
+  estim <- geex::coef(results)
+  sd_estim <- sqrt(diag(geex::vcov(results)))
   
   p <- length(estim) - (2 + n_estimands)
   idx <- (p+1):(p+2+n_estimands)
