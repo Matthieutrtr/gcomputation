@@ -26,8 +26,8 @@ summary.gcbinary <- function (object, digits=4, ci.type=NULL, ci.level=0.95, una
     }
   }else{
     
-    sd_p0 <- sd(x$adjusted.results$c0, na.rm=TRUE)
-    sd_p1 <- sd(x$adjusted.results$c1, na.rm=TRUE)
+    sd_p0 <- sd(x$adjusted.results$p0, na.rm=TRUE)
+    sd_p1 <- sd(x$adjusted.results$p1, na.rm=TRUE)
     sd_delta <- sd(x$adjusted.results$delta, na.rm=TRUE)
     sd_ratio <- sd(x$adjusted.results$ratio, na.rm=TRUE)
     sd_OR <- sd(x$adjusted.results$OR, na.rm=TRUE)

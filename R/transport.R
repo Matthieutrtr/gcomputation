@@ -6,8 +6,8 @@ transport <- function(object, newdata, estim_var = "mc", n.sim=500, seed=NULL) {
   
   if("initial.data" %in% attributes(object)$names){stop("Cannot transport when multiple imputations has been used, try relaunch gcomputation without it.")}
   
-  if(!(estim_var %in% c("mc", "boot", "m-estim"))){
-    stop("estim_ var parameter needs to be one of: mc, boot, m-estim")
+  if(!(estim_var %in% c("mc", "boot", "sp_estimate", "m-estim"))){
+    stop("estim_ var parameter needs to be one of: mc, boot, sp_estimate, m-estim")
   }
   
   fit <- object$qmodel.fit
@@ -517,7 +517,7 @@ create_mestim_obj <- function(gc, data_target){
   # }else{
   
   data_form <- gc$data %>%
-    select(all.vars(form))  
+    dplyr::select(all.vars(form))  
   
   if (any(is.na(data_form))){
     
@@ -530,6 +530,7 @@ create_mestim_obj <- function(gc, data_target){
     
   } else {
     
+    data_origin <- data_form
     nmiss_origin <- 0
     
   }
@@ -547,7 +548,7 @@ create_mestim_obj <- function(gc, data_target){
   data_target[ , outcome_var] <- NA 
   
   data_all <- bind_rows(data_origin, data_target) %>%
-    select(intersect(names(data_origin), names(data_target)))
+    dplyr::select(intersect(names(data_origin), names(data_target)))
   
   n <- sum(data_all$S) #number of individuals in the original data set
   m <- nrow(data_all) - n #number of individuals in the targeted data set
