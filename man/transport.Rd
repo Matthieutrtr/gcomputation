@@ -23,7 +23,7 @@ The function employs three distinct estimation strategies:
 \itemize{
   \item \bold{Monte Carlo Simulation:} For unpenalized models (likelihood-based models like "all", "aic", or "bic"), the function uses the variance-covariance matrix of the Q-model regression coefficients to simulate Q-models assuming a multivariate normal distribution. This provides a distribution of adjusted results and the related confidence intervals.
   \item \bold{Single Point Estimate:} For penalized models ("lasso", "ridge", "elasticnet") and survival models (\code{gctimes}), the function does not estimate the distribution of adjusted results and the related confidence intervals.
-  \item \bold{M-estimation:} For unpenalized models (likelihood-based models like "all", "aic", or "bic"), the function uses estimating equations in case of gcomputation and then apply toot solving and empirical sandwich estimator to find estimated values and associated standard errors. Root finding and sandwich estimator are computed thanks to the package geex.
+  \item \bold{M-estimation:} For unpenalized models (likelihood-based models like "all", "aic", or "bic"), the function uses estimating equations in case of gcomputation and then apply root solving and empirical sandwich estimator to find estimated values and associated standard errors. Root finding and sandwich estimator are computed thanks to the package geex.
 }
 }
 
