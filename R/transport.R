@@ -14,8 +14,8 @@ transport <- function(object, newdata, estim_var, n.sim=500, seed=NULL) {
   model <- object$model
   
   if(estim_var == "m-estim"){
-    if(!(model == "all")){
-      stop("M-estimation is only defined for parametric regression models: model = all")
+    if(!(model %in% c("all", "aic", "bic"))){
+      stop("M-estimation is only defined for parametric regression models: model = all, aic, bic")
     }
   }
   
@@ -461,15 +461,21 @@ transport <- function(object, newdata, estim_var, n.sim=500, seed=NULL) {
       
     }
     
+    .mm <- attr(res_mest, "model.matrix")
+    new_qmodel.fit <- list()
+    new_qmodel.fit$coefficients <- setNames(res_mest[1:length(colnames(.mm))],
+                                            nm = colnames(.mm))
+    
     res <- list(
       qmodel.fit = object$qmodel.fit,
-      predictions = object$predictions,
+      new_qmodel.fit = new_qmodel.fit,
+      predictions = NA,
       tuning.parameters = object$tuning.parameters,
       data = object$data,
       newdata = newdata,
       formula = formula,
       model = model,
-      cv = object$cv,
+      cv = NULL,
       missing = nmiss,
       missing_origin = list_mest$nmiss_origin,
       n.sim = NULL,
@@ -493,7 +499,7 @@ transport <- function(object, newdata, estim_var, n.sim=500, seed=NULL) {
 
 create_mestim_obj <- function(gc, data_target){
   
-  form <- gc$formula
+  form <- gc$tuning.parameters
   
   # if("initial.data" %in% attributes(gc)){
   #   
@@ -685,19 +691,17 @@ Mestimation_process.mestim_gaussian <- function(mestim_list, ...){
   estim <- geex::coef(results)
   sd_estim <- sqrt(diag(geex::vcov(results)))
   
-  p <- length(estim) - (2 + n_estimands)
-  idx <- (p+1):(p+2+n_estimands)
-  
-  base_names <- c("tau0", "tau1")
+  base_names <- c(colnames(mm), "tau0", "tau1")
   all_names  <- c(base_names, estimands_names)
   
   out <- setNames(
-    c(estim[idx], sd_estim[idx]),
+    c(estim, sd_estim),
     c(all_names, paste0("sd_", all_names))
   )
   
+  attr(out, "model.matrix") <- mm
   
-  out <- round(out, 3)
+  # out <- round(out, 3)
   
   return(out)
   
