@@ -1,4 +1,4 @@
-transport <- function(object, newdata, estim_var = "mc", n.sim=500, seed=NULL) {
+transport <- function(object, newdata, estim_var, n.sim=500, seed=NULL) {
   if (!inherits(object, c("gcbinary", "gctimes", "gccount", "gccontinuous" ))) {
     stop("object must be of class 'gcbinary', 'gctimes', 'gccontinuous' or 'gccount'")
   }
@@ -420,7 +420,7 @@ transport <- function(object, newdata, estim_var = "mc", n.sim=500, seed=NULL) {
     res_mest <- Mestimation_process(list_mest)
     
     
-    if(class(object) == "gcbinary"){
+    if(inherits(object, "gcbinary")){
       
       adj_results <- data.frame(p1 = res_mest["tau1"], 
                                 p0 = res_mest["tau0"], 
@@ -435,7 +435,7 @@ transport <- function(object, newdata, estim_var = "mc", n.sim=500, seed=NULL) {
       
     }
     
-    if(class(object) == "gccontinuous"){
+    if(inherits(object, "gccontinuous")){
       
       adj_results <- data.frame(m1 = res_mest["tau1"], 
                                 m0 = res_mest["tau0"], 
@@ -448,7 +448,7 @@ transport <- function(object, newdata, estim_var = "mc", n.sim=500, seed=NULL) {
       
     }
     
-    if(class(object) == "gccount"){
+    if(inherits(object, "gccount")){
       
       adj_results <- data.frame(c1 = res_mest["tau1"], 
                                 c0 = res_mest["tau0"], 
