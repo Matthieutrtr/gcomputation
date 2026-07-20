@@ -13,15 +13,17 @@ transport(object, newdata, n.sim=500, seed=NULL)
 \arguments{
   \item{object}{An object returned by the function \code{\link{gc_binary}},  \code{\link{gc_continuous}},  \code{\link{gc_count}} or \code{\link{gc_times}}.}
   \item{newdata}{The new data frame with all the covariates in the \code{formula} of the \code{object}.}
+  \item{estim_var}{Method used for estimation ("mc", "sp_estimate", "m-estim"), especially to estimate the standard errors, no default value, see details for more information.}
   \item{n.sim}{The number of Monte Carlo simulations to perform for estimating standard errors and confidence intervals of the marginal effects on the \code{newdata}. This is only applicable for unpenalized models. The default value is 500.}
   \item{seed}{A random seed to ensure reproducibility during the simulation process. If \code{NULL} (the default), a seed is randomly assigned.}
 }
 
 \details{
-The function employs two distinct estimation strategies:
+The function employs three distinct estimation strategies:
 \itemize{
   \item \bold{Monte Carlo Simulation:} For unpenalized models (likelihood-based models like "all", "aic", or "bic"), the function uses the variance-covariance matrix of the Q-model regression coefficients to simulate Q-models assuming a multivariate normal distribution. This provides a distribution of adjusted results and the related confidence intervals.
   \item \bold{Single Point Estimate:} For penalized models ("lasso", "ridge", "elasticnet") and survival models (\code{gctimes}), the function does not estimate the distribution of adjusted results and the related confidence intervals.
+  \item \bold{M-estimation:} For unpenalized models (likelihood-based models like "all", "aic", or "bic"), the function uses estimating equations in case of gcomputation and then apply toot solving and empirical sandwich estimator to find estimated values and associated standard errors. Root finding and sandwich estimator are computed thanks to the package geex.
 }
 }
 
@@ -30,6 +32,8 @@ The function returns an object of the same class with the same arguments as the 
 }
 \references{
 Pearl J, Bareinboim E. External validity: From do-calculus to transportability across populations. Statistical Science. 2012;29(4):579-595.
+Ross RK, Zivich PN, Stringer JSA, Cole SR. M-estimation for common epidemiological measures: introduction and applied examples. Int J Epidemiol. 2024 Feb 14;53(2):dyae030. doi: 10.1093/ije/dyae030. PMID: 38423105; PMCID: PMC10904145.
+Saul BC, Hudgens MG . The Calculus of M-Estimation in R with geex. Journal of Statistical Software. 2020;92(2), 1–15. doi:10.18637/jss.v092.i02.
 }
 
 \examples{
@@ -50,9 +54,14 @@ summary(gc1, ci.type="norm", ci.level=0.95)
 newdata <- subset(dataPROPHYVAP, AGE <= 50)
 
 ### transport the gc_binary model to the new dataset
-gc2 <- transport(object=gc1, newdata=newdata, n.sim=10)
 
+gc2 <- transport(object=gc1, newdata=newdata, estim_var = "mc", n.sim=10)
 summary(gc2, ci.type="perc", ci.level=0.95)
+
+
+gc3 <- transport(object=gc1, newdata=newdata, estim_var = "m-estim")
+summary(gc3, ci.type="norm", ci.level=0.95)
+
 }
 
 \keyword{Transportation}
