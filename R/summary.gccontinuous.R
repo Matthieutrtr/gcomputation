@@ -7,40 +7,64 @@ summary.gccontinuous <- function (object, digits=4, ci.type=NULL, ci.level=0.95,
   
   x <- object
   
-  tmp <- matrix(c(mean(x$adjusted.results$m0, na.rm=TRUE), sd(x$adjusted.results$m0, na.rm=TRUE), mean(x$adjusted.results$m0, na.rm=TRUE)/sd(x$adjusted.results$m0, na.rm=TRUE), NA), nrow=1)
+  if((!is.null(attr(object, "estim_var")))){
+    if(attr(object, "estim_var") == "m-estimation"){
+      
+      if(!is.null(ci.type)){
+        if(ci.type == "perc"){
+          stop("ci.type can only be norm in case of transportability with m-estimation")
+        }
+      }
+      
+      sd_m0 <- x$adjusted.results$sd_m0
+      sd_m1 <- x$adjusted.results$sd_m1
+      sd_delta <- x$adjusted.results$sd_delta
+      sd_ratio <- x$adjusted.results$sd_ratio
+      
+    }
+  }else{
+    
+    sd_m0 <- sd(x$adjusted.results$m0, na.rm=TRUE)
+    sd_m1 <- sd(x$adjusted.results$m1, na.rm=TRUE)
+    sd_delta <- sd(x$adjusted.results$delta, na.rm=TRUE)
+    sd_ratio <- sd(x$adjusted.results$ratio, na.rm=TRUE)
+    
+  }
+  
+  tmp <- matrix(c(mean(x$adjusted.results$m0, na.rm=TRUE), sd_m0, mean(x$adjusted.results$m0, na.rm=TRUE)/sd_m0, NA), nrow=1)
   colnames(tmp) <- c("Estimate", "Std. Error", "z value", "Pr(>|z|)")
   rownames(tmp) <- "m0"
   res <- tmp
   
-  tmp <- matrix(c(mean(x$adjusted.results$m1, na.rm=TRUE), sd(x$adjusted.results$m1, na.rm=TRUE), mean(x$adjusted.results$m1, na.rm=TRUE)/sd(x$adjusted.results$m1, na.rm=TRUE), NA), nrow=1)
+  tmp <- matrix(c(mean(x$adjusted.results$m1, na.rm=TRUE), sd_m1, mean(x$adjusted.results$m1, na.rm=TRUE)/sd_m1, NA), nrow=1)
   rownames(tmp) <- "m1"
   res <- rbind(res,tmp)
   
-  tmp <- matrix(c(mean(x$adjusted.results$delta, na.rm=TRUE), sd(x$adjusted.results$delta, na.rm=TRUE), mean(x$adjusted.results$delta, na.rm=TRUE)/sd(x$adjusted.results$delta, na.rm=TRUE),
-                  ifelse(mean(x$adjusted.results$delta, na.rm=TRUE)/sd(x$adjusted.results$delta, na.rm=TRUE)<0,
-                         2*pnorm(mean(x$adjusted.results$delta, na.rm=TRUE)/sd(x$adjusted.results$delta, na.rm=TRUE)),
-                         2*(1-pnorm(mean(x$adjusted.results$delta, na.rm=TRUE)/sd(x$adjusted.results$delta, na.rm=TRUE))))), nrow=1)
+  tmp <- matrix(c(mean(x$adjusted.results$delta, na.rm=TRUE), sd_delta, mean(x$adjusted.results$delta, na.rm=TRUE)/sd_delta,
+                  ifelse(mean(x$adjusted.results$delta, na.rm=TRUE)/sd_delta<0,
+                         2*pnorm(mean(x$adjusted.results$delta, na.rm=TRUE)/sd_delta),
+                         2*(1-pnorm(mean(x$adjusted.results$delta, na.rm=TRUE)/sd_delta)))), nrow=1)
   rownames(tmp) <- "m1-m0"
   res <- rbind(res,tmp)
   
-  tmp <- matrix(c(mean(x$adjusted.results$ratio, na.rm=TRUE), sd(x$adjusted.results$ratio, na.rm=TRUE), mean(x$adjusted.results$ratio, na.rm=TRUE)/sd(x$adjusted.results$ratio, na.rm=TRUE),
-                  ifelse(mean(x$adjusted.results$ratio, na.rm=TRUE)/sd(x$adjusted.results$ratio, na.rm=TRUE)<0,
-                         2*pnorm(mean(x$adjusted.results$ratio, na.rm=TRUE)/sd(x$adjusted.results$ratio, na.rm=TRUE)),
-                         2*(1-pnorm(mean(x$adjusted.results$ratio, na.rm=TRUE)/sd(x$adjusted.results$ratio, na.rm=TRUE))))), nrow=1)
+  tmp <- matrix(c(mean(x$adjusted.results$ratio, na.rm=TRUE), sd_ratio, mean(x$adjusted.results$ratio, na.rm=TRUE)/sd_ratio,
+                  ifelse(mean(x$adjusted.results$ratio, na.rm=TRUE)/sd_ratio<0,
+                         2*pnorm(mean(x$adjusted.results$ratio, na.rm=TRUE)/sd_ratio),
+                         2*(1-pnorm(mean(x$adjusted.results$ratio, na.rm=TRUE)/sd_ratio)))), nrow=1)
   rownames(tmp) <- "m1/m0"
   res <- rbind(res,tmp)
   
   
   if (!is.null(ci.type)) {
     if (ci.type == "norm") {
-      ci_vals <- matrix(c(mean(x$adjusted.results$m0, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$m0, na.rm=TRUE),
-                          mean(x$adjusted.results$m0, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$m0, na.rm=TRUE),
-                          mean(x$adjusted.results$m1, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$m1, na.rm=TRUE),
-                          mean(x$adjusted.results$m1, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$m1, na.rm=TRUE),
-                          mean(x$adjusted.results$delta, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$delta, na.rm=TRUE),
-                          mean(x$adjusted.results$delta, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$delta, na.rm=TRUE),
-                          mean(x$adjusted.results$ratio, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$ratio, na.rm=TRUE),
-                          mean(x$adjusted.results$ratio, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$ratio, na.rm=TRUE)
+      ci_vals <- matrix(c(mean(x$adjusted.results$m0, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd_m0,
+                          mean(x$adjusted.results$m0, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd_m0,
+                          mean(x$adjusted.results$m1, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd_m1,
+                          mean(x$adjusted.results$m1, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd_m1,
+                          mean(x$adjusted.results$delta, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd_delta,
+                          mean(x$adjusted.results$delta, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd_delta,
+                          mean(x$adjusted.results$ratio, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd_ratio,
+                          mean(x$adjusted.results$ratio, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd_ratio
       ), ncol=2, byrow=TRUE)
     }
     if (ci.type == "perc") {
@@ -123,6 +147,13 @@ summary.gccontinuous <- function (object, digits=4, ci.type=NULL, ci.level=0.95,
   } else {
     out <- list(adjusted = res_GC, model = x$model, formula = x$formula, tuning.parameters = x$tuning.parameters, n = x$n, nimput = x$nimput, missing = x$missing, m=x$m, digits = digits, unadjusted.flag = FALSE)
   }
+  
+  if(!is.null(attr(x, "estim_var"))){
+    if(attr(x,"estim_var") == "m-estimation"){
+      out <- c(out, missing_origin = x$missing_origin)
+    }
+  }
+  
   class(out) <- "summary.gccontinuous"
   out
 }

@@ -1,7 +1,9 @@
+import(dplyr)
 import(survival)
 import(glmnet)
 import(hdnom)
 import(MASS)
+import(geex)
 #import(stats)
 import(mice)
 
@@ -13,7 +15,7 @@ importFrom("graphics", "axis")
 importFrom("stats", "as.formula", "formula", "glm", "loess", "median",
              "model.matrix", "na.omit", "pnorm", "predict",
              "printCoefmat", "qnorm", "quantile", "sd", "terms",
-			       "coef","plogis","vcov", "update")
+			       "coef","plogis","vcov", "update", "delete.response", "setNames")
 
 export(gc_binary)
 export(gc_continuous)

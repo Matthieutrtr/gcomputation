@@ -1,6 +1,3 @@
-
-
-
 print.summary.gccontinuous <- function (x, ...)
 {
   digits <- x$digits
@@ -15,12 +12,12 @@ print.summary.gccontinuous <- function (x, ...)
       if (x$model == "ridge") {
         cat("lambda= ",round(x$tuning.parameters$lambda,digits=digits),sep=" ")}
     }
-    cat("\nfamily: poisson(link = 'log')")
+    cat("\nfamily: gaussian(link = 'identity')")
     cat("\nCall:", "\n", sep = "")
     dput(x$formula)
   }
   if (x$model %in% c("all","aic","bic")) {
-    cat(x$model," model \nfamily: poisson(link = 'log')\nCall:", "\n", sep = "")
+    cat(x$model," model \nfamily: gaussian(link = 'identity')\nCall:", "\n", sep = "")
     if (is.null(x$m)) {dput(x$tuning.parameters)} else {dput(x$tuning.parameters[[1]])}
   }
   cat("\n")
@@ -43,6 +40,8 @@ print.summary.gccontinuous <- function (x, ...)
   }
   if(x$missing==1) { cat(x$missing, " observation deleted due to missingness", sep=""); cat("\n") }
   if(x$missing >1) { cat(x$missing, " observations deleted due to missingness", sep=""); cat("\n") }
+  if(!is.null(x$missing_origin)){if(x$missing_origin == 1){cat(x$missing_origin, " observation deleted due to missingness in original dataset", sep=""); cat("\n")}}
+  if(!is.null(x$missing_origin)){if(x$missing_origin > 1){cat(x$missing_origin, " observations deleted due to missingness in original dataset", sep=""); cat("\n")}}
   
   invisible(x)
 }

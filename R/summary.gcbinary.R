@@ -7,49 +7,77 @@ summary.gcbinary <- function (object, digits=4, ci.type=NULL, ci.level=0.95, una
   
   x <- object
   
-  tmp <- matrix(c(mean(x$adjusted.results$p0, na.rm=TRUE), sd(x$adjusted.results$p0, na.rm=TRUE), mean(x$adjusted.results$p0, na.rm=TRUE)/sd(x$adjusted.results$p0, na.rm=TRUE), NA), nrow=1)
+  if((!is.null(attr(object, "estim_var")))){
+    if(attr(object, "estim_var") == "m-estimation"){
+      
+      if(!is.null(ci.type)){
+        if(ci.type == "perc"){
+          stop("ci.type can only be norm in case of transportability with m-estimation")
+        }
+      }
+      
+      sd_p0 <- x$adjusted.results$sd_p0
+      sd_p1 <- x$adjusted.results$sd_p1
+      sd_delta <- x$adjusted.results$sd_delta
+      sd_ratio <- x$adjusted.results$sd_ratio
+      sd_OR <- x$adjusted.results$sd_OR
+      
+      
+    }
+  }else{
+    
+    sd_p0 <- sd(x$adjusted.results$p0, na.rm=TRUE)
+    sd_p1 <- sd(x$adjusted.results$p1, na.rm=TRUE)
+    sd_delta <- sd(x$adjusted.results$delta, na.rm=TRUE)
+    sd_ratio <- sd(x$adjusted.results$ratio, na.rm=TRUE)
+    sd_OR <- sd(x$adjusted.results$OR, na.rm=TRUE)
+    
+    
+  }
+  
+  tmp <- matrix(c(mean(x$adjusted.results$p0, na.rm=TRUE), sd_p0, mean(x$adjusted.results$p0, na.rm=TRUE)/sd_p0, NA), nrow=1)
   colnames(tmp) <- c("Estimate", "Std. Error", "z value", "Pr(>|z|)")
   rownames(tmp) <- "p0"
   res <- tmp
   
-  tmp <- matrix(c(mean(x$adjusted.results$p1, na.rm=TRUE), sd(x$adjusted.results$p1, na.rm=TRUE), mean(x$adjusted.results$p1, na.rm=TRUE)/sd(x$adjusted.results$p1, na.rm=TRUE), NA), nrow=1)
+  tmp <- matrix(c(mean(x$adjusted.results$p1, na.rm=TRUE), sd_p1, mean(x$adjusted.results$p1, na.rm=TRUE)/sd_p1, NA), nrow=1)
   rownames(tmp) <- "p1"
   res <- rbind(res,tmp)
   
-  tmp <- matrix(c(mean(x$adjusted.results$delta, na.rm=TRUE), sd(x$adjusted.results$delta, na.rm=TRUE), mean(x$adjusted.results$delta, na.rm=TRUE)/sd(x$adjusted.results$delta, na.rm=TRUE),
-                  ifelse(mean(x$adjusted.results$delta, na.rm=TRUE)/sd(x$adjusted.results$delta, na.rm=TRUE)<0,
-                         2*pnorm(mean(x$adjusted.results$delta, na.rm=TRUE)/sd(x$adjusted.results$delta, na.rm=TRUE)),
-                         2*(1-pnorm(mean(x$adjusted.results$delta, na.rm=TRUE)/sd(x$adjusted.results$delta, na.rm=TRUE))))), nrow=1)
+  tmp <- matrix(c(mean(x$adjusted.results$delta, na.rm=TRUE), sd_delta, mean(x$adjusted.results$delta, na.rm=TRUE)/sd_delta,
+                  ifelse(mean(x$adjusted.results$delta, na.rm=TRUE)/sd_delta<0,
+                         2*pnorm(mean(x$adjusted.results$delta, na.rm=TRUE)/sd_delta),
+                         2*(1-pnorm(mean(x$adjusted.results$delta, na.rm=TRUE)/sd_delta)))), nrow=1)
   rownames(tmp) <- "p1-p0"
   res <- rbind(res,tmp)
   
-  tmp <- matrix(c(mean(x$adjusted.results$ratio, na.rm=TRUE), sd(x$adjusted.results$ratio, na.rm=TRUE), mean(x$adjusted.results$ratio, na.rm=TRUE)/sd(x$adjusted.results$ratio, na.rm=TRUE),
-                  ifelse(mean(x$adjusted.results$ratio, na.rm=TRUE)/sd(x$adjusted.results$ratio, na.rm=TRUE)<0,
-                         2*pnorm(mean(x$adjusted.results$ratio, na.rm=TRUE)/sd(x$adjusted.results$ratio, na.rm=TRUE)),
-                         2*(1-pnorm(mean(x$adjusted.results$ratio, na.rm=TRUE)/sd(x$adjusted.results$ratio, na.rm=TRUE))))), nrow=1)
+  tmp <- matrix(c(mean(x$adjusted.results$ratio, na.rm=TRUE), sd_ratio, mean(x$adjusted.results$ratio, na.rm=TRUE)/sd_ratio,
+                  ifelse(mean(x$adjusted.results$ratio, na.rm=TRUE)/sd_ratio<0,
+                         2*pnorm(mean(x$adjusted.results$ratio, na.rm=TRUE)/sd_ratio),
+                         2*(1-pnorm(mean(x$adjusted.results$ratio, na.rm=TRUE)/sd_ratio)))), nrow=1)
   rownames(tmp) <- "p1/p0"
   res <- rbind(res,tmp)
   
-  tmp <- matrix(c(mean(x$adjusted.results$OR, na.rm=TRUE), sd(x$adjusted.results$OR, na.rm=TRUE), mean(x$adjusted.results$OR, na.rm=TRUE)/sd(x$adjusted.results$OR, na.rm=TRUE),
-                  ifelse(mean(x$adjusted.results$OR, na.rm=TRUE)/sd(x$adjusted.results$OR, na.rm=TRUE)<0,
-                         2*pnorm(mean(x$adjusted.results$OR, na.rm=TRUE)/sd(x$adjusted.results$OR, na.rm=TRUE)),
-                         2*(1-pnorm(mean(x$adjusted.results$OR, na.rm=TRUE)/sd(x$adjusted.results$OR, na.rm=TRUE))))), nrow=1)
+  tmp <- matrix(c(mean(x$adjusted.results$OR, na.rm=TRUE), sd_OR, mean(x$adjusted.results$OR, na.rm=TRUE)/sd_OR,
+                  ifelse(mean(x$adjusted.results$OR, na.rm=TRUE)/sd_OR<0,
+                         2*pnorm(mean(x$adjusted.results$OR, na.rm=TRUE)/sd_OR),
+                         2*(1-pnorm(mean(x$adjusted.results$OR, na.rm=TRUE)/sd_OR)))), nrow=1)
   rownames(tmp) <- "OR"
   res <- rbind(res,tmp)
   
   
   if (!is.null(ci.type)) {
     if (ci.type == "norm") {
-      ci_vals <- matrix(c(mean(x$adjusted.results$p0, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$p0, na.rm=TRUE),
-                          mean(x$adjusted.results$p0, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$p0, na.rm=TRUE),
-                          mean(x$adjusted.results$p1, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$p1, na.rm=TRUE),
-                          mean(x$adjusted.results$p1, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$p1, na.rm=TRUE),
-                          mean(x$adjusted.results$delta, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$delta, na.rm=TRUE),
-                          mean(x$adjusted.results$delta, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$delta, na.rm=TRUE),
-                          mean(x$adjusted.results$ratio, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$ratio, na.rm=TRUE),
-                          mean(x$adjusted.results$ratio, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$ratio, na.rm=TRUE),
-                          mean(x$adjusted.results$OR, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$OR, na.rm=TRUE),
-                          mean(x$adjusted.results$OR, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd(x$adjusted.results$OR, na.rm=TRUE)
+      ci_vals <- matrix(c(mean(x$adjusted.results$p0, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd_p0,
+                          mean(x$adjusted.results$p0, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd_p0,
+                          mean(x$adjusted.results$p1, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd_p1,
+                          mean(x$adjusted.results$p1, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd_p1,
+                          mean(x$adjusted.results$delta, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd_delta,
+                          mean(x$adjusted.results$delta, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd_delta,
+                          mean(x$adjusted.results$ratio, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd_ratio,
+                          mean(x$adjusted.results$ratio, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd_ratio,
+                          mean(x$adjusted.results$OR, na.rm=TRUE) - qnorm(1-(1-ci.level)/2, 0, 1)*sd_OR,
+                          mean(x$adjusted.results$OR, na.rm=TRUE) + qnorm(1-(1-ci.level)/2, 0, 1)*sd_OR
       ), ncol=2, byrow=TRUE)
     }
     if (ci.type == "perc") {
@@ -146,6 +174,13 @@ summary.gcbinary <- function (object, digits=4, ci.type=NULL, ci.level=0.95, una
   } else {
     out <- list(adjusted = res_GC, model = x$model, formula = x$formula, tuning.parameters = x$tuning.parameters, n = x$n, nevent = x$nevent, nimput = x$nimput, missing = x$missing, m=x$m, digits = digits, unadjusted.flag = FALSE)
   }
+  
+  if(!is.null(attr(x, "estim_var"))){
+    if(attr(x,"estim_var") == "m-estimation"){
+      out <- c(out, missing_origin = x$missing_origin)
+    }
+  }
+  
   class(out) <- "summary.gcbinary"
   out
 }

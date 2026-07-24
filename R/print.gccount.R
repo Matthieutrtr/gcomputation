@@ -35,7 +35,7 @@ print.gccount<- function (x, digits=4, ...)
   
   cat("\n")
   cat(paste0("n= ",x$n))
-
+  
   cat("\n")
   if (!is.null(x$nimput)) {
     if (x$nimput == 1) { cat(x$nimput, " observation imputed", sep=""); cat("\n") }
@@ -43,4 +43,7 @@ print.gccount<- function (x, digits=4, ...)
   }
   if(x$missing==1) { cat(x$missing, " observation deleted due to missingness", sep=""); cat("\n") }
   if(x$missing >1) { cat(x$missing, " observations deleted due to missingness", sep=""); cat("\n") }
+  if(!is.null(x$missing_origin)){if(x$missing_origin == 1){cat(x$missing_origin, " observation deleted due to missingness in original dataset", sep=""); cat("\n")}}
+  if(!is.null(x$missing_origin)){if(x$missing_origin > 1){cat(x$missing_origin, " observations deleted due to missingness in original dataset", sep=""); cat("\n")}}
+  
 }
