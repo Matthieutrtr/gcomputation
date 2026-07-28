@@ -1,5 +1,5 @@
 .gc_binary <- function(formula, data, group, effect="ATE", model, param.tune=NULL, cv=10, boot.type="bcv",
-                      boot.number=500, boot.tune=FALSE, progress=TRUE, seed=NULL) {
+                       boot.number=500, boot.tune=FALSE, progress=TRUE, seed=NULL) {
   # Quality tests
   if(missing(formula)) {stop("The \"formula\" argument is missing (formula)")}
   if(missing(data)) {stop("The \"data\" argument is missing (data.frame)")}
@@ -182,7 +182,7 @@ functions, stratification and clustering are not implemented") }
   
   
   
-
+  
   N <- length(data[,outcome])
   
   ### model
@@ -279,6 +279,7 @@ functions, stratification and clustering are not implemented") }
   ###   Bootstrapping
   
   BCVerror <- 0
+  err_event_rare <- 0
   p0 <- c()
   p1 <- c()
   OR <- c() 
@@ -358,7 +359,7 @@ functions, stratification and clustering are not implemented") }
     
     .y.learn <- data.learn[,outcome]
     
-
+    
     
     
     ### Unadjusted results
@@ -412,6 +413,10 @@ functions, stratification and clustering are not implemented") }
       .OR = (.p1*(1-.p0))/(.p0*(1-.p1))
       .delta = .p1 - .p0
       .ratio = .p1 / .p0
+    }
+    
+    if (model %in% c("lasso","ridge","elasticnet")) {
+      if (sum(.y.learn <= 1)) {err_event_rare=err_event_rare+1;next}
     }
     
     if (model == "lasso") {
@@ -492,6 +497,7 @@ functions, stratification and clustering are not implemented") }
   if(progress==TRUE){ close(pb) }
   
   if (BCVerror > 0) {warning(paste0("Skipped ",BCVerror," bootstrap iterations and only used ", boot.number-BCVerror," iterations due to the validation dataset containing factors not in the train dataset. Either use type=\"boot\" instead of \"bcv\" or remove factors with rare modalities."))}  
+  if (err_event_rare > 0) {warning(paste0("Skipped ",err_event_rare," bootstrap iterations and only used ", boot.number-err_event_rare," iterations due to rare events (0 or 1 events in set bootstrap). Increase \"boot.number\" for the desired amount of bootstraps."))}  
   if (!is.null(.warnen)) {warning(paste0("The optimal tuning parameter alpha was equal to ",.warnen,", using ",ifelse(.warnen==0,"ridge","lasso")," instead"))}  
   
   
