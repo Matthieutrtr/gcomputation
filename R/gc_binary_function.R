@@ -416,7 +416,7 @@ functions, stratification and clustering are not implemented") }
     }
     
     if (model %in% c("lasso","ridge","elasticnet")) {
-      if (sum(.y.learn <= 1)) {err_event_rare=err_event_rare+1;next}
+      if (sum(.y.learn) <= 1) {err_event_rare=err_event_rare+1;next}
     }
     
     if (model == "lasso") {
