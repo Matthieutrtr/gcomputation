@@ -7,7 +7,7 @@
 }
 
 \usage{
-transport(object, newdata, estim_var, n.sim=500, seed=NULL)
+transport(object, newdata, estim_var, nboot = 100, n.sim=500, seed=NULL)
 }
 
 \arguments{
