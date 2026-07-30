@@ -75,8 +75,8 @@ summary(gc_mi, ci.type="perc")
 newdata_binary <- subset(dataPROPHYVAP, AGE<=50)
 
 # Transport the fitted gc_bin model to the new dataset
-gc_transport <- transport(object=gc_bin, newdata=newdata_binary,
-                              boot.number=500)
+gc_transport <- transport(object=gc_bin, newdata=newdata, estim_var = "monte_carlo", n.sim=10)
+summary(gc2, ci.type="perc", ci.level=0.95)
 
 summary(gc_transport, ci.type="norm")
 ```
