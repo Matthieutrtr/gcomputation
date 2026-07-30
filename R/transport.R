@@ -6,8 +6,8 @@ transport <- function(object, newdata, estim_var, nboot = 100, n.sim=500, seed=N
   
   if("initial.data" %in% attributes(object)$names){stop("Cannot transport when multiple imputations has been used, try relaunch gcomputation without it.")}
   
-  if(!(estim_var %in% c("monte_carlo", "point_estimate", "m_estimation"))){
-    stop("estim_ var parameter needs to be one of: monte_carlo, point_estimate, m_estimation")
+  if(!(estim_var %in% c("monte_carlo", "point_estimate", "m_estimation", "bootstrap"))){
+    stop("estim_ var parameter needs to be one of: monte_carlo, point_estimate, m_estimation, bootstrap")
   }
   
   fit <- object$qmodel.fit
@@ -16,6 +16,18 @@ transport <- function(object, newdata, estim_var, nboot = 100, n.sim=500, seed=N
   if(estim_var == "m_estimation"){
     if(!(model %in% c("all", "aic", "bic"))){
       stop("M-estimation is only defined for parametric regression models: model = all, aic, bic")
+    }
+  }
+  
+  if(estim_var == "monte_carlo"){
+    if(!(model %in% c("all", "aic", "bic"))){
+      stop("Monte Carlo simulation is only defined for parametric regression models: model = all, aic, bic")
+    }
+  }
+  
+  if(estim_var == "point_estimate"){
+    if(!((model %in% c("lasso", "ridge", "elasticnet", "")) || inherits(object, "gctimes"))){
+      stop("Point estimate is only defined for penalized models (lasso, ridge, elasticnet) and survival models.")
     }
   }
   
@@ -499,10 +511,10 @@ transport <- function(object, newdata, estim_var, nboot = 100, n.sim=500, seed=N
     
   }
   
-  if(estim_var == "boot"){
+  if(estim_var == "bootstrap"){
     
     if(inherits(object, "gctimes")){
-      stop("bootstrap for object gctimes not implemented yet")
+      stop("bootstrap for object gctimes not implemented.")
     }
     
     form <- object$formula
@@ -532,6 +544,20 @@ transport <- function(object, newdata, estim_var, nboot = 100, n.sim=500, seed=N
                                                         data_ini = data_origin,
                                                         data_target = newdata,
                                                         boot = T),
+                            simplify = F)
+      
+      res_boot <- dplyr::bind_rows(list_res)
+      
+      
+    }
+    
+    if(model == "all"){
+      
+      list_res <- replicate(nboot,
+                            parametric_transport_forboot(gc = object, 
+                                                         data_ini = data_origin,
+                                                         data_target = newdata,
+                                                         boot = T),
                             simplify = F)
       
       res_boot <- dplyr::bind_rows(list_res)
@@ -599,7 +625,7 @@ transport <- function(object, newdata, estim_var, nboot = 100, n.sim=500, seed=N
     )
     
     class(res) <- class(object)
-
+    
     return(res)
     
     
@@ -611,27 +637,6 @@ transport <- function(object, newdata, estim_var, nboot = 100, n.sim=500, seed=N
 create_mestim_obj <- function(gc, data_target){
   
   form <- gc$tuning.parameters
-  
-  # if("initial.data" %in% attributes(gc)){
-  #   
-  #   data_form <- gc$initial.data %>%
-  #     select(all.vars(form))
-  #   
-  #   if(any(is.na(data_form))){
-  #     
-  #     initial_data_omit <- na.omit(data_form)
-  #     nmiss_origin <- nrow(data_form) - nrow(initial_data_omit)
-  #     
-  #     data_origin <- initial_data_omit
-  #     
-  #     warning("M-estimation for transportability cannot be used with multiple imputations, rows containing NA values in the original dataset have been removed!")
-  #     
-  #   }else{
-  #     
-  #     nmiss_origin <- 0
-  #     
-  #   }
-  # }else{
   
   data_form <- gc$data %>%
     dplyr::select(all.vars(form))  
@@ -651,9 +656,6 @@ create_mestim_obj <- function(gc, data_target){
     nmiss_origin <- 0
     
   }
-  
-  
-  # }
   
   grp_var <- gc$group
   family <- gc$qmodel.fit$family$family
@@ -813,9 +815,7 @@ Mestimation_process.mestim_gaussian <- function(mestim_list, ...){
   )
   
   attr(out, "model.matrix") <- mm
-  
-  # out <- round(out, 3)
-  
+
   return(out)
   
 }
@@ -897,7 +897,7 @@ penalized_transport_forboot <- function(gc, data_ini, data_target, boot = T){
   
   res_glmnet <- glmnet::glmnet(x = mm, y = y,family = fam, 
                                alpha = alpha, 
-                               lambda = gc$tunning.parameters$lambda, #seq(hyp_param$lambda, 0, length.out = 20),
+                               lambda = gc$tunning.parameters$lambda,
                                penalty.factor = penalty_fact, 
                                intercept = intercept_bool)
   
@@ -915,3 +915,62 @@ penalized_transport_forboot <- function(gc, data_ini, data_target, boot = T){
   
   return(out)
 }
+
+parametric_transport_forboot <- function(gc, data_ini, data_target, boot = T){
+  
+  grp <- gc$group
+  form <- gc$formula
+  model <- gc$model
+  
+  if(isTRUE(boot)){
+    
+    data_train <- dplyr::slice_sample(.data = data_ini, 
+                                      n = nrow(data_ini), 
+                                      replace = T)
+    
+    data_test <- dplyr::slice_sample(.data = data_target, 
+                                     n = nrow(data_target), 
+                                     replace = T)
+  }else{
+    
+    data_train <- data_ini
+    data_test <- data_target
+    
+  }
+  
+  data_test0 <- data_test1 <- data_test
+  data_test0[,grp] <- 0
+  data_test1[,grp] <- 1
+  
+  
+  if(inherits(gc, "gcbinary")){
+    fam <- "binomial"
+  }else{
+    if(inherits(gc, "gccontinuous")){
+      fam <- "gaussian"
+    }else{
+      if(inherits(gc, "gccount")){
+        fam <- "poisson"
+      }
+    }
+  }
+  
+  res_glm <- glm(formula = form,
+                 family = fam, 
+                 data = data_train)
+  
+  
+  res0 <- predict(res_glm, newdata = data_test0, type = "response")
+  res1 <- predict(res_glm, newdata = data_test1, type = "response")
+  
+  tau0 <- mean(res0)
+  tau1 <- mean(res1)
+  ate <- tau1-tau0
+  
+  out <- c("tau0" = tau0,
+           "tau1" = tau1,
+           "delta" = ate)
+  
+  return(out)
+}
+
