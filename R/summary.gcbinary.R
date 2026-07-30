@@ -8,7 +8,7 @@ summary.gcbinary <- function (object, digits=4, ci.type=NULL, ci.level=0.95, una
   x <- object
   
   if((!is.null(attr(object, "estim_var")))){
-    if(attr(object, "estim_var") == "m-estimation"){
+    if(attr(object, "estim_var") == "m_estimation"){
       
       if(!is.null(ci.type)){
         if(ci.type == "perc"){
@@ -176,7 +176,7 @@ summary.gcbinary <- function (object, digits=4, ci.type=NULL, ci.level=0.95, una
   }
   
   if(!is.null(attr(x, "estim_var"))){
-    if(attr(x,"estim_var") == "m-estimation"){
+    if(attr(x,"estim_var") == "m_estimation"){
       out <- c(out, missing_origin = x$missing_origin)
     }
   }
