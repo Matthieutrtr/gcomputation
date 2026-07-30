@@ -1,4 +1,4 @@
-transport <- function(object, newdata, estim_var, n.sim=500, seed=NULL) {
+transport <- function(object, newdata, estim_var, nboot = 100, n.sim=500, seed=NULL) {
   if (!inherits(object, c("gcbinary", "gctimes", "gccount", "gccontinuous" ))) {
     stop("object must be of class 'gcbinary', 'gctimes', 'gccontinuous' or 'gccount'")
   }
@@ -494,6 +494,112 @@ transport <- function(object, newdata, estim_var, n.sim=500, seed=NULL) {
     
   }
   
+  if(estim_var == "boot"){
+    
+    if(inherits(object, "gctimes")){
+      stop("bootstrap for object gctimes not implemented yet")
+    }
+    
+    form <- object$formula
+    data_form <- object$data %>%
+      dplyr::select(all.vars(form))  
+    
+    if (any(is.na(data_form))){
+      
+      initial_data_omit <- na.omit(data_form)
+      nmiss_origin <- nrow(data_form) - nrow(initial_data_omit)
+      
+      data_origin <- initial_data_omit
+      
+      warning("Rows containing NA values in the original dataset have been removed!")
+      
+    } else {
+      
+      data_origin <- data_form
+      nmiss_origin <- 0
+      
+    }
+    
+    if(model %in% c("lasso", "ridge", "elasticnet")){
+      
+      list_res <- replicate(nboot,
+                            penalized_transport_forboot(gc = object, 
+                                                        data_ini = data_origin,
+                                                        data_target = newdata,
+                                                        boot = T),
+                            simplify = F)
+      
+      res_boot <- dplyr::bind_rows(list_res)
+      
+      
+    }
+    
+    if(inherits(object, "gcbinary")){
+      
+      ratio <- res_boot[["tau1"]]/res_boot[["tau0"]]
+      OR <- (res_boot[["tau1"]]*(1 - res_boot[["tau0"]]))/(res_boot[["tau0"]]*(1 - res_boot[["tau1"]]))
+      
+      adj_results <- data.frame(p1 = res_boot[["tau1"]], 
+                                p0 = res_boot[["tau0"]], 
+                                delta = res_boot[["delta"]], 
+                                ratio = ratio,
+                                OR = OR)
+      
+    }
+    
+    if(inherits(object, "gccontinuous")){
+      
+      ratio <- res_boot[["tau1"]]/res_boot[["tau0"]]
+      
+      adj_results <- data.frame(m1 = res_boot[["tau1"]], 
+                                m0 = res_boot[["tau0"]], 
+                                delta = res_boot[["delta"]], 
+                                ratio = ratio)
+      
+      
+    }
+    
+    if(inherits(object, "gccount")){
+      
+      ratio <- res_boot[["tau1"]]/res_boot[["tau0"]]
+      
+      adj_results <- data.frame(c1 = res_boot[["tau1"]], 
+                                c0 = res_boot[["tau0"]], 
+                                delta = res_boot[["delta"]], 
+                                ratio = ratio)
+      
+    }
+    
+    
+    
+    res <- list(
+      qmodel.fit = object$qmodel.fit,
+      predictions = NA,
+      tuning.parameters = object$tuning.parameters,
+      data = object$data,
+      newdata = newdata,
+      formula = formula,
+      model = model,
+      cv = object$cv,
+      missing = nmiss,
+      missing_origin = nmiss_origin,
+      n.sim = NULL,
+      nboot = nboot,
+      group = group,
+      n = nrow(newdata) - nmiss,
+      nevent = NA,
+      adjusted.results = adj_results,
+      effect = "ATE",
+      call = match.call()
+    )
+    
+    class(res) <- class(object)
+
+    return(res)
+    
+    
+  }
+  
   
 }
 
@@ -711,4 +817,96 @@ Mestimation_process.mestim_gaussian <- function(mestim_list, ...){
 
 Mestimation_process <- function(mestim_list, ...){
   UseMethod("Mestimation_process")
+}
+
+penalized_transport_forboot <- function(gc, data_ini, data_target, boot = T){
+  
+  grp <- gc$group
+  form <- gc$formula
+  model <- gc$model
+  
+  if(isTRUE(boot)){
+    
+    data_train <- dplyr::slice_sample(.data = data_ini, 
+                                      n = nrow(data_ini), 
+                                      replace = T)
+    
+    data_test <- dplyr::slice_sample(.data = data_target, 
+                                     n = nrow(data_target), 
+                                     replace = T)
+  }else{
+    
+    data_train <- data_ini
+    data_test <- data_target
+    
+  }
+  
+  data_test0 <- data_test1 <- data_test
+  data_test0[,grp] <- 0
+  data_test1[,grp] <- 1
+  
+  mm <- model.matrix(object = form, data = data_train)
+  mm0 <- model.matrix(object = form, data = data_test0)
+  mm1 <- model.matrix(object = form, data = data_test1)
+  
+  if("(Intercept)" %in% colnames(mm)){
+    
+    mm <- mm[,-1]
+    mm0 <- mm0[,-1]
+    mm1 <- mm1[,-1]
+    
+    intercept_bool <- T
+    
+  }else{
+    
+    intercept_bool <- F
+    
+  }
+  
+  y <- data_train[,all.vars(form)[1]]
+  
+  if(model == "ridge"){
+    alpha <- 0
+  }else{
+    if(model == "lasso"){
+      alpha <- 1
+    }else{
+      alpha <- gc$tuning.parameters$alpha
+    }
+  }
+  
+  if(inherits(gc, "gcbinary")){
+    fam <- "binomial"
+  }else{
+    if(inherits(gc, "gccontinuous")){
+      fam <- "gaussian"
+    }else{
+      if(inherits(gc, "gccount")){
+        fam <- "poisson"
+      }
+    }
+  }
+  
+  penalty_fact <- rep(1, ncol(mm))
+  penalty_fact[which(colnames(mm) == grp)] <- 0 #to set no penalty on group variable
+  
+  res_glmnet <- glmnet::glmnet(x = mm, y = y,family = fam, 
+                               alpha = alpha, 
+                               lambda = gc$tunning.parameters$lambda, #seq(hyp_param$lambda, 0, length.out = 20),
+                               penalty.factor = penalty_fact, 
+                               intercept = intercept_bool)
+  
+  
+  res0 <- predict(res_glmnet, newx = mm0, type = "response")
+  res1 <- predict(res_glmnet, newx = mm1, type = "response")
+  
+  tau0 <- mean(res0)
+  tau1 <- mean(res1)
+  ate <- tau1-tau0
+  
+  out <- c("tau0" = tau0,
+           "tau1" = tau1,
+           "delta" = ate)
+  
+  return(out)
 }
