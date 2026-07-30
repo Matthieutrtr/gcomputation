@@ -2,7 +2,7 @@
 # gcomputation: an R Package for Estimating Marginal Effects Using G-Computation
 
 
-## Description <a href='https://cran.r-project.org/web/packages/gcomputation/index.html'><img src='man/logoGC.png' align="right" height="210" /></a>
+## Description <a href='https://cran.r-project.org/web/packages/gcomputation/index.html'><img src='man/figures/logo.png' align="right" height="210" /></a>
 
 The R package ‘gcomputation’ provides functions to compute G-Computation (GC) to estimate marginal effects. It has functions for estimating marginal effects for binary, time-to-event, continuous and count outcomes regarding two exposures. The package implements GC with various working models or algorithms, referred to as Q-models.
 
