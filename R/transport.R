@@ -6,14 +6,14 @@ transport <- function(object, newdata, estim_var, nboot = 100, n.sim=500, seed=N
   
   if("initial.data" %in% attributes(object)$names){stop("Cannot transport when multiple imputations has been used, try relaunch gcomputation without it.")}
   
-  if(!(estim_var %in% c("mc", "boot", "sp_estimate", "m-estim"))){
-    stop("estim_ var parameter needs to be one of: mc, boot, sp_estimate, m-estim")
+  if(!(estim_var %in% c("monte_carlo", "point_estimate", "m_estimation"))){
+    stop("estim_ var parameter needs to be one of: monte_carlo, point_estimate, m_estimation")
   }
   
   fit <- object$qmodel.fit
   model <- object$model
   
-  if(estim_var == "m-estim"){
+  if(estim_var == "m_estimation"){
     if(!(model %in% c("all", "aic", "bic"))){
       stop("M-estimation is only defined for parametric regression models: model = all, aic, bic")
     }
@@ -60,7 +60,7 @@ transport <- function(object, newdata, estim_var, nboot = 100, n.sim=500, seed=N
   if(!is.null(seed)) {set.seed(seed)}
   set.seed(seed)
   
-  if(estim_var %in% c("mc", "sp_estimate")){
+  if(estim_var %in% c("monte_carlo", "point_estimate")){
     
     if (inherits(object, "gcbinary")) {
       if(model %in% c("lasso","ridge","elasticnet")) {
@@ -414,10 +414,15 @@ transport <- function(object, newdata, estim_var, nboot = 100, n.sim=500, seed=N
     }
   }
   
-  if(estim_var == "m-estim"){
+  if(estim_var == "m_estimation"){
+    
+    if(inherits(object, "gctimes")){
+      stop("M-estimation is not available for gc_times objects for now.")
+    }
     
     list_mest <- create_mestim_obj(gc = object, data_target = newdata)
     res_mest <- Mestimation_process(list_mest)
+    
     
     
     if(inherits(object, "gcbinary")){
@@ -488,7 +493,7 @@ transport <- function(object, newdata, estim_var, nboot = 100, n.sim=500, seed=N
     )
     
     class(res) <- class(object)
-    attr(res, "estim_var") <- "m-estimation"
+    attr(res, "estim_var") <- "m_estimation"
     
     return(res)
     
